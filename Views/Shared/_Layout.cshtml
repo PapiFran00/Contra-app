@@ -1,0 +1,4 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>CONTRA APP</title><link rel="stylesheet" href="~/css/site.css" /><link rel="stylesheet" href="~/css/app-extensions.css" /></head>
+<body><div class="phone-frame"><main class="phone-shell">@await Component.InvokeAsync("AppHeader")<div class="page-content">@RenderBody()</div></main><nav class="bottom-nav" aria-label="Navegación principal"><a href="/"><i>⌂</i><span>Inicio</span></a><a href="/Partidos/Buscar"><i>⌕</i><span>Buscar</span></a><a class="create" href="/Partidos/Crear" aria-label="Crear partido">+</a><a href="/Chat"><i>◯</i><span>Chat</span></a><a href="/Perfil"><i>♙</i><span>Perfil</span></a></nav></div><script src="https://cdn.jsdelivr.net/npm/@@supabase/supabase-js@2"></script><script src="~/js/realtime.js"></script>@await RenderSectionAsync("Scripts", required: false)</body></html>

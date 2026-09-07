@@ -1,0 +1,39 @@
+<section class="auth-intro">
+    <img class="auth-emblem" src="~/assets/images/contra-logo.png" alt="CONTRA" />
+    <p class="page-kicker">CREÁ TU CUENTA</p>
+    <h1>Sumate a CONTRA</h1>
+    <p>Completá tus datos y empezá a jugar.</p>
+</section>
+
+<form id="registro" class="stack form-card auth-card" enctype="multipart/form-data">
+    <section class="registration-avatar" aria-labelledby="registration-avatar-title">
+        <p id="registration-avatar-title" class="registration-avatar-title">Foto de perfil <span>(opcional)</span></p>
+        <label class="registration-avatar-button" id="registrationAvatarButton" for="registrationAvatarInput">
+            <span class="registration-avatar-photo" aria-hidden="true">
+                <span class="registration-avatar-person"></span>
+                <span class="registration-avatar-camera"><i></i></span>
+            </span>
+            <span class="registration-avatar-copy">Tocá para cambiar tu foto</span>
+        </label>
+        <input id="registrationAvatarInput" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Seleccionar foto de perfil" />
+    </section>
+    <div class="two-columns"><label>Nombre<input id="nombre" name="nombre" autocomplete="given-name" required /></label><label>Apellido<input id="apellido" name="apellido" autocomplete="family-name" required /></label></div>
+    <label>Correo electrónico<input id="correo" name="correo" type="email" autocomplete="email" placeholder="nombre@email.com" required /></label>
+    <label>Fecha de nacimiento<input id="fechaNacimiento" name="fechaNacimiento" type="date" required /></label>
+    <label>Género<select id="genero" name="genero" required><option value="">Seleccionar</option><option>Hombre</option><option>Mujer</option><option>Prefiero no decirlo</option></select></label>
+    <fieldset class="password-fields"><legend>Elegí una contraseña segura</legend><label>Contraseña<input id="contrasena" name="contrasena" type="password" autocomplete="new-password" minlength="8" required /><small>Al menos 8 caracteres.</small></label><label>Confirmar contraseña<input id="confirmarContrasena" name="confirmarContrasena" type="password" autocomplete="new-password" required /></label></fieldset>
+    <button class="button">Crear mi cuenta</button>
+    <p class="feedback" aria-live="polite"></p>
+</form>
+<p class="auth-links"><a href="/Auth/Login">¿Ya tenés cuenta? <strong>Iniciá sesión</strong></a></p>
+
+<dialog class="registration-cropper" id="registrationCropper" aria-labelledby="registrationCropperTitle">
+    <div class="registration-cropper-panel">
+        <header><div><p class="page-kicker">FOTO DE PERFIL</p><h2 id="registrationCropperTitle">Encuadrá tu foto</h2><p>Arrastrala y ajustá el zoom hasta que quede perfecta.</p></div><button id="registrationCropperClose" class="registration-cropper-close" type="button" aria-label="Cerrar">×</button></header>
+        <div class="registration-cropper-mask"><canvas id="registrationCropperCanvas" width="512" height="512" aria-label="Área de recorte circular"></canvas></div>
+        <label class="registration-cropper-zoom" for="registrationCropperZoom"><span>−</span><div><b>Zoom</b><input id="registrationCropperZoom" type="range" min="1" max="3" value="1" step="0.01" aria-label="Zoom de la imagen" /></div><span>+</span></label>
+        <div class="registration-cropper-actions"><button id="registrationCropperCancel" class="text-button" type="button">Cancelar</button><button id="registrationCropperConfirm" class="button" type="button">Confirmar foto</button></div>
+    </div>
+</dialog>
+
+@section Scripts { <script src="~/js/registro.js"></script> }

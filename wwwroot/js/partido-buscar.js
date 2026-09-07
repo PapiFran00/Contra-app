@@ -1,0 +1,3 @@
+const filtros = document.querySelector("#filtros"), resultado = document.querySelector("#resultado-partidos");
+async function buscar(){ const q = new URLSearchParams(); if(filtros.deporte.value) q.set("deporte",filtros.deporte.value); if(filtros.fecha.value) q.set("fecha",filtros.fecha.value); try { const rows=await api(`partidos?${q}`); resultado.innerHTML=rows.map(partidoMarkup).join(""); if(!rows.length) empty(resultado,"No hay partidos que coincidan con los filtros."); } catch { empty(resultado,"No fue posible consultar partidos."); } }
+filtros.addEventListener("submit",e=>{e.preventDefault();buscar();}); buscar(); realTime("partidos",buscar); realTime("postulaciones",buscar);

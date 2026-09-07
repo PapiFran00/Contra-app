@@ -1,0 +1,9 @@
+@if (!(bool)ViewBag.IsAuthenticated)
+{
+    <section id="auth-required" class="auth-gate"><span class="gate-icon">♙</span><h1>Tu perfil, tus partidos</h1><p>Ingresá para organizar, postularte y conversar con otros jugadores.</p><a class="button" href="/Auth/Login">Iniciar sesión o registrarme</a></section>
+}
+else
+{
+    <header><h1>Mi perfil</h1><p>Tus datos, a tu manera.</p></header><form id="perfil-form" class="stack"><section class="avatar-picker" aria-labelledby="profile-avatar-title"><div class="avatar-picker-copy"><strong id="profile-avatar-title">Foto de perfil</strong><small>Actualizá tu imagen cuando quieras.</small></div><label class="avatar-trigger" id="perfilAvatarPreview" for="perfilAvatarInput"><span class="avatar-camera" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M8.2 5.2 9.4 3h5.2l1.2 2.2H19A2 2 0 0 1 21 7.2v10.6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7.2a2 2 0 0 1 2-2h3.2ZM12 17a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0-1.8a2.7 2.7 0 1 1 0-5.4 2.7 2.7 0 0 1 0 5.4Z"/></svg></span><span class="avatar-trigger-text">Tocá para cambiar tu foto</span></label><input id="perfilAvatarInput" type="file" accept="image/jpeg,image/png,image/webp" hidden /></section><label>Nombre<input name="nombre" required /></label><label>Apellido<input name="apellido" /></label><input name="fechaNacimiento" type="hidden" /><p id="edad" class="profile-age"></p><label>Género<select name="genero"><option value="">Prefiero no decirlo</option><option>Hombre</option><option>Mujer</option></select></label><button class="button">Guardar cambios</button><p class="feedback"></p></form>
+}
+@section Scripts { <script src="~/js/avatar-cropper.js"></script><script src="~/js/perfil.js"></script> }

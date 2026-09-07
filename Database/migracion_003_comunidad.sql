@@ -1,0 +1,5 @@
+create table if not exists public.solicitudes_complejo (id uuid primary key default gen_random_uuid(),usuario_id uuid references public.usuarios(id) on delete set null,nombre_complejo text not null,telefono text not null,tiene_futbol boolean not null,canchas_futbol integer not null default 0,futbol_techada boolean not null default false,tiene_padel boolean not null,canchas_padel integer not null default 0,padel_techada boolean not null default false,creado_en timestamptz not null default now());
+create table if not exists public.opiniones (id uuid primary key default gen_random_uuid(),usuario_id uuid references public.usuarios(id) on delete set null,tipo text not null check(tipo in ('Opinión','Error','Mejora')),mensaje text not null check(char_length(mensaje) between 1 and 2000),creado_en timestamptz not null default now());
+alter table public.solicitudes_complejo enable row level security; alter table public.opiniones enable row level security;
+create policy "enviar solicitud complejo" on public.solicitudes_complejo for insert with check (true);
+create policy "enviar opinion" on public.opiniones for insert with check (true);

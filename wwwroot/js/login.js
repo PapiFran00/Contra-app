@@ -1,0 +1,2 @@
+const login = document.querySelector("#login"), feedbackLogin = login.querySelector(".feedback");
+login.addEventListener("submit", async event => { event.preventDefault(); feedbackLogin.textContent = ""; try { const response = await fetch("/Auth/Login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ correo: login.correo.value, contrasena: login.contrasena.value }) }); if (!response.ok) throw new Error(await response.text()); location.href = "/"; } catch (error) { feedbackLogin.textContent = error.message; } });

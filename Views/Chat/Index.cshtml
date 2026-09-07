@@ -1,0 +1,9 @@
+@if (!(bool)ViewBag.IsAuthenticated)
+{
+    <section class="auth-gate"><span class="gate-icon">◯</span><h1>Chats de tus partidos</h1><p>Iniciá sesión para ver las conversaciones de partidos aceptados.</p><a class="button" href="/Auth/Login">Iniciar sesión o registrarme</a></section>
+}
+else
+{
+    <header><h1>Chats</h1><p>Conversaciones de partidos aceptados.</p></header><section id="lista-chats" class="stack" aria-live="polite"></section>
+}
+@section Scripts { <script src="~/js/chat.js"></script> }

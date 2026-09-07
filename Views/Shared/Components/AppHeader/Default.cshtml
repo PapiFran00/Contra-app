@@ -1,0 +1,12 @@
+@model HeaderViewModel
+<header class="app-topbar">
+    <a class="brand-logo-link" href="/"><img class="brand-logo" src="~/assets/images/contra-logo.png" alt="CONTRA" /></a>
+    @if (Model.IsAuthenticated)
+    {
+        <a class="profile-avatar" href="/Perfil" aria-label="Abrir mi perfil">
+            <span class="avatar-initials" aria-hidden="true">@Model.Initials</span>
+            @if (!string.IsNullOrWhiteSpace(Model.AvatarUrl)) { <img src="@Model.AvatarUrl" alt="Foto de perfil" onerror="this.remove()" /> }
+        </a>
+    }
+    else { <a class="login-link" href="/Auth/Login"><span aria-hidden="true">♙</span> Iniciar sesión</a> }
+</header>

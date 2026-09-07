@@ -1,0 +1,3 @@
+@model Guid
+<header><a href="/Chat">← Chats</a><h1>Conversación</h1></header><section id="mensajes" class="stack" data-conversacion="@Model"></section><form id="enviar-mensaje" class="message-form"><input name="contenido" maxlength="1000" placeholder="Escribí un mensaje" required /><button class="button">Enviar</button></form>
+@section Scripts { <script src="~/js/chat.js"></script> }
