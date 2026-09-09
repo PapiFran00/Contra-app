@@ -1,0 +1,34 @@
+@{
+    ViewData["Title"] = "Verificá tu correo";
+}
+
+<div style="background-color: #0b1310; min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #ffffff;">
+    <div style="max-width: 500px; width: 100%; background-color: #121c16; border: 1px solid #1e3328; border-radius: 16px; padding: 40px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);">
+        
+        <!-- Insignia de la marca -->
+        <div style="margin-bottom: 25px;">
+            <div style="display: inline-block; background-color: #0b1310; border: 2px solid #fbbf24; color: #fbbf24; font-weight: 900; font-size: 22px; letter-spacing: 2px; padding: 8px 16px; border-radius: 12px; box-shadow: 0 0 15px rgba(251, 191, 36, 0.15);">
+                CONTRA <span style="color: #ffffff;">APP</span>
+            </div>
+        </div>
+
+        <!-- Icono o Emoji destacado -->
+        <div style="font-size: 50px; margin-bottom: 20px;">✉️</div>
+
+        <!-- Título -->
+        <h2 style="color: #ffffff; font-size: 24px; font-weight: 700; margin-bottom: 15px;">¡Falta un último paso!</h2>
+
+        <!-- Mensaje -->
+        <p style="color: #d1d5db; font-size: 15px; line-height: 1.6; margin-bottom: 30px;">
+            Te acabamos de enviar un correo electrónico de confirmación. Por favor, revisá tu bandeja de entrada (o la carpeta de spam) y hacé clic en el enlace para activar tu cuenta y entrar a la cancha.
+        </p>
+
+        <!-- Botón de respaldo o volver al login -->
+        <div>
+            <a href="@Url.Action("Login", "Account")" style="background-color: #fbbf24; color: #0b1310 !important; padding: 12px 24px; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 8px; display: inline-block; box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);">
+                Ir al Inicio de Sesión
+            </a>
+        </div>
+
+    </div>
+</div>
