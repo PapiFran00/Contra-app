@@ -56,12 +56,19 @@ public sealed class AuthController(SupabaseGateway db, IOptions<SupabaseOptions>
                 return BadRequest("La foto recortada debe ser un JPEG de hasta 5 MB.");
 
             var signup = await db.SignUp(new RegistroRequest { Correo = email, Contrasena = input.Contrasena }, PublicUrl("Auth/Confirmado"));
-            var user = signup.GetProperty("user");
-            var id = Guid.Parse(user.GetProperty("id").GetString()!);
-            var accessToken = signup.TryGetProperty("access_token", out var token) ? token.GetString() : null;
+            
+            // Verificación segura de la propiedad "user" para evitar errores de diccionario
+            if (!signup.TryGetProperty("user", out var userElement))
+                return BadRequest("No se pudo obtener la información del usuario desde Supabase.");
 
-            if (string.IsNullOrWhiteSpace(accessToken) && !options.Value.HasServiceRoleKey)
-                return BadRequest("La cuenta fue creada y requiere confirmación. Configurá Supabase__ServiceRoleKey como secreto del servidor para completar el perfil y el avatar antes de confirmar el correo.");
+            var id = Guid.Parse(userElement.GetProperty("id").GetString()!);
+            
+            // Extracción segura del token de acceso
+            string? accessToken = null;
+            if (signup.TryGetProperty("access_token", out var tokenProp))
+            {
+                accessToken = tokenProp.GetString();
+            }
 
             string? avatarUrl = null;
             if (input.Avatar is { Length: > 0 })
@@ -78,10 +85,11 @@ public sealed class AuthController(SupabaseGateway db, IOptions<SupabaseOptions>
             else
                 await db.InsertAsUser<Usuario>("usuarios", profile, accessToken);
 
-            if (string.IsNullOrWhiteSpace(accessToken))
-                return Ok(new { requiresEmailConfirmation = true });
+            if (!string.IsNullOrWhiteSpace(accessToken))
+            {
+                SetSession(accessToken);
+            }
 
-            SetSession(accessToken);
             return Ok(new { requiresEmailConfirmation = false });
         }
         catch (Exception ex) 
