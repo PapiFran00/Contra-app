@@ -88,13 +88,8 @@ registro.addEventListener("submit", async event => {
         if (croppedAvatar) body.append("avatar", croppedAvatar, "avatar.jpg");
         const response = await fetch("/Auth/Registro", { method: "POST", body });
         if (!response.ok) throw new Error(await response.text());
-        const result = await response.json();
         
-        // Redirección adaptada para mandar a la pantalla de aviso de verificación de correo
-        if (result.requiresEmailConfirmation) {
-            location.href = "/Auth/VerifyEmailNotice";
-        } else {
-            location.href = "/";
-        }
+        // Como ya no pedimos confirmación por mail, entra directo a la app
+        location.href = "/";
     } catch (error) { feedbackRegistro.textContent = error.message; }
 });
