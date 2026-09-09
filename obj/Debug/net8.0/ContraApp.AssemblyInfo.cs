@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ContraApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a7421eb21933e5ca80ee2d3b5011f6f0f96da0f3")]
 [assembly: System.Reflection.AssemblyProductAttribute("ContraApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ContraApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
