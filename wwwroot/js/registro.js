@@ -89,7 +89,8 @@ registro.addEventListener("submit", async event => {
         const response = await fetch("/Auth/Registro", { method: "POST", body });
         if (!response.ok) throw new Error(await response.text());
         
-        // Como ya no pedimos confirmación por mail, entra directo a la app
-        location.href = "/";
+        // Éxito: avisamos y redirigimos al login
+        alert("¡Cuenta creada con éxito! Ya podés iniciar sesión.");
+        location.href = "/Auth/Login";
     } catch (error) { feedbackRegistro.textContent = error.message; }
 });

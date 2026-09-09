@@ -72,61 +72,30 @@ public sealed class AuthController(SupabaseGateway db, IOptions<SupabaseOptions>
             if (input.Avatar is { Length: > 5 * 1024 * 1024 } || input.Avatar is { ContentType: not "image/jpeg" })
                 return BadRequest("La foto recortada debe ser un JPEG de hasta 5 MB.");
 
-            JsonElement signup;
+            Guid userId;
             try
             {
-                signup = await db.SignUp(new RegistroRequest { Correo = email, Contrasena = input.Contrasena }, PublicUrl("Auth/Confirmado"));
+                // Creamos directamente el usuario en Supabase con email confirmado de forma automática
+                userId = await db.CreateAuthUser(new AltaAdminRequest { Correo = email, Contrasena = input.Contrasena });
             }
-            catch
+            catch (Exception ex)
             {
-                return BadRequest("No se pudo registrar el usuario en Supabase. Es posible que el correo ya esté en uso.");
-            }
-
-            string? accessToken = null;
-            Guid id;
-
-            if (signup.TryGetProperty("user", out var userElement) && userElement.ValueKind != JsonValueKind.Null && userElement.TryGetProperty("id", out var idProp))
-            {
-                id = Guid.Parse(idProp.GetString()!);
-                if (signup.TryGetProperty("access_token", out var tokenProp) && tokenProp.ValueKind == JsonValueKind.String)
-                {
-                    accessToken = tokenProp.GetString();
-                }
-            }
-            else
-            {
-                var loginFallback = await db.Login(new LoginRequest { Correo = email, Contrasena = input.Contrasena });
-                var userObj = loginFallback.GetProperty("user");
-                id = Guid.Parse(userObj.GetProperty("id").GetString()!);
-                accessToken = loginFallback.GetProperty("access_token").GetString()!;
-            }
-
-            if (string.IsNullOrWhiteSpace(accessToken))
-            {
-                var forcedLogin = await db.Login(new LoginRequest { Correo = email, Contrasena = input.Contrasena });
-                accessToken = forcedLogin.GetProperty("access_token").GetString()!;
+                return BadRequest("No se pudo registrar el usuario en Supabase: " + ex.Message);
             }
 
             string? avatarUrl = null;
             if (input.Avatar is { Length: > 0 })
             {
                 await using var image = input.Avatar.OpenReadStream();
-                await db.UploadAvatar(id, image, accessToken);
-                avatarUrl = db.PublicAvatarUrl(id);
+                await db.UploadAvatar(userId, image, null);
+                avatarUrl = db.PublicAvatarUrl(userId);
             }
 
-            var profile = new { id, nombre, apellido, fecha_nacimiento = input.FechaNacimiento, genero = input.Genero == "Prefiero no decirlo" ? null : input.Genero, rol = "jugador", avatar_url = avatarUrl };
+            var profile = new { id = userId, nombre, apellido, fecha_nacimiento = input.FechaNacimiento, genero = input.Genero == "Prefiero no decirlo" ? null : input.Genero, rol = "jugador", avatar_url = avatarUrl };
             
-            try
-            {
-                await db.InsertAsUser<Usuario>("usuarios", profile, accessToken);
-            }
-            catch
-            {
-                await db.Insert<Usuario>("usuarios", profile, service: true);
-            }
+            // Insertamos el perfil en la base de datos usando la llave de servicio
+            await db.Insert<Usuario>("usuarios", profile, service: true);
 
-            SetSession(accessToken);
             return Ok();
         }
         catch (Exception ex) 
