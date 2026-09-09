@@ -23,7 +23,6 @@ public sealed class AuthController(SupabaseGateway db, IOptions<SupabaseOptions>
         { 
             var result = await db.Login(input); 
             
-            // Extracción segura del access_token sin importar cómo venga estructurado el JSON de Supabase
             string? accessToken = null;
             if (result.TryGetProperty("access_token", out var tokenProp) && tokenProp.ValueKind == JsonValueKind.String)
             {
@@ -73,7 +72,6 @@ public sealed class AuthController(SupabaseGateway db, IOptions<SupabaseOptions>
             if (input.Avatar is { Length: > 5 * 1024 * 1024 } || input.Avatar is { ContentType: not "image/jpeg" })
                 return BadRequest("La foto recortada debe ser un JPEG de hasta 5 MB.");
 
-            // 1. Registramos en Supabase Auth
             JsonElement signup;
             try
             {
@@ -84,7 +82,6 @@ public sealed class AuthController(SupabaseGateway db, IOptions<SupabaseOptions>
                 return BadRequest("No se pudo registrar el usuario en Supabase. Es posible que el correo ya esté en uso.");
             }
 
-            // 2. Obtenemos el ID de usuario y el token de manera ultra segura (o haciendo login si viene plano)
             string? accessToken = null;
             Guid id;
 
@@ -98,21 +95,18 @@ public sealed class AuthController(SupabaseGateway db, IOptions<SupabaseOptions>
             }
             else
             {
-                // Si el formato de respuesta del signUp no trae el usuario directo, nos logueamos al instante
                 var loginFallback = await db.Login(new LoginRequest { Correo = email, Contrasena = input.Contrasena });
                 var userObj = loginFallback.GetProperty("user");
                 id = Guid.Parse(userObj.GetProperty("id").GetString()!);
                 accessToken = loginFallback.GetProperty("access_token").GetString()!;
             }
 
-            // Si por alguna razón todavía no hay token, hacemos un login rápido para asegurarlo
             if (string.IsNullOrWhiteSpace(accessToken))
             {
                 var forcedLogin = await db.Login(new LoginRequest { Correo = email, Contrasena = input.Contrasena });
                 accessToken = forcedLogin.GetProperty("access_token").GetString()!;
             }
 
-            // 3. Subimos el avatar si el usuario adjuntó uno
             string? avatarUrl = null;
             if (input.Avatar is { Length: > 0 })
             {
@@ -121,7 +115,6 @@ public sealed class AuthController(SupabaseGateway db, IOptions<SupabaseOptions>
                 avatarUrl = db.PublicAvatarUrl(id);
             }
 
-            // 4. Guardamos el perfil en la tabla 'usuarios'
             var profile = new { id, nombre, apellido, fecha_nacimiento = input.FechaNacimiento, genero = input.Genero == "Prefiero no decirlo" ? null : input.Genero, rol = "jugador", avatar_url = avatarUrl };
             
             try
@@ -130,11 +123,9 @@ public sealed class AuthController(SupabaseGateway db, IOptions<SupabaseOptions>
             }
             catch
             {
-                // Si falla como usuario por políticas de RLS, intentamos con la llave de servicio si está disponible
                 await db.Insert<Usuario>("usuarios", profile, service: true);
             }
 
-            // 5. Seteamos la cookie de sesión y dejamos entrar a la app
             SetSession(accessToken);
             return Ok();
         }
