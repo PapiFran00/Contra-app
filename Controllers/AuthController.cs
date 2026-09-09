@@ -2,6 +2,7 @@ using ContraApp.Models;
 using ContraApp.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
 
 namespace ContraApp.Controllers;
 
@@ -21,12 +22,29 @@ public sealed class AuthController(SupabaseGateway db, IOptions<SupabaseOptions>
         try 
         { 
             var result = await db.Login(input); 
-            SetSession(result.GetProperty("access_token").GetString()!); 
+            
+            // Extracción segura del access_token sin importar cómo venga estructurado el JSON de Supabase
+            string? accessToken = null;
+            if (result.TryGetProperty("access_token", out var tokenProp) && tokenProp.ValueKind == JsonValueKind.String)
+            {
+                accessToken = tokenProp.GetString();
+            }
+            else if (result.TryGetProperty("session", out var sessionProp) && sessionProp.TryGetProperty("access_token", out var innerToken))
+            {
+                accessToken = innerToken.GetString();
+            }
+
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                return BadRequest("No se pudo obtener el token de acceso de Supabase.");
+            }
+
+            SetSession(accessToken); 
             return Ok(); 
         }
-        catch 
+        catch (Exception ex) 
         { 
-            return BadRequest("Credenciales inválidas."); 
+            return BadRequest("Credenciales inválidas o error de conexión: " + ex.Message); 
         }
     }
 
@@ -55,21 +73,46 @@ public sealed class AuthController(SupabaseGateway db, IOptions<SupabaseOptions>
             if (input.Avatar is { Length: > 5 * 1024 * 1024 } || input.Avatar is { ContentType: not "image/jpeg" })
                 return BadRequest("La foto recortada debe ser un JPEG de hasta 5 MB.");
 
-            var signup = await db.SignUp(new RegistroRequest { Correo = email, Contrasena = input.Contrasena }, PublicUrl("Auth/Confirmado"));
-            
-            // Verificación segura de la propiedad "user" para evitar errores de diccionario
-            if (!signup.TryGetProperty("user", out var userElement))
-                return BadRequest("No se pudo obtener la información del usuario desde Supabase.");
-
-            var id = Guid.Parse(userElement.GetProperty("id").GetString()!);
-            
-            // Extracción segura del token de acceso
-            string? accessToken = null;
-            if (signup.TryGetProperty("access_token", out var tokenProp))
+            // 1. Registramos en Supabase Auth
+            JsonElement signup;
+            try
             {
-                accessToken = tokenProp.GetString();
+                signup = await db.SignUp(new RegistroRequest { Correo = email, Contrasena = input.Contrasena }, PublicUrl("Auth/Confirmado"));
+            }
+            catch
+            {
+                return BadRequest("No se pudo registrar el usuario en Supabase. Es posible que el correo ya esté en uso.");
             }
 
+            // 2. Obtenemos el ID de usuario y el token de manera ultra segura (o haciendo login si viene plano)
+            string? accessToken = null;
+            Guid id;
+
+            if (signup.TryGetProperty("user", out var userElement) && userElement.ValueKind != JsonValueKind.Null && userElement.TryGetProperty("id", out var idProp))
+            {
+                id = Guid.Parse(idProp.GetString()!);
+                if (signup.TryGetProperty("access_token", out var tokenProp) && tokenProp.ValueKind == JsonValueKind.String)
+                {
+                    accessToken = tokenProp.GetString();
+                }
+            }
+            else
+            {
+                // Si el formato de respuesta del signUp no trae el usuario directo, nos logueamos al instante
+                var loginFallback = await db.Login(new LoginRequest { Correo = email, Contrasena = input.Contrasena });
+                var userObj = loginFallback.GetProperty("user");
+                id = Guid.Parse(userObj.GetProperty("id").GetString()!);
+                accessToken = loginFallback.GetProperty("access_token").GetString()!;
+            }
+
+            // Si por alguna razón todavía no hay token, hacemos un login rápido para asegurarlo
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                var forcedLogin = await db.Login(new LoginRequest { Correo = email, Contrasena = input.Contrasena });
+                accessToken = forcedLogin.GetProperty("access_token").GetString()!;
+            }
+
+            // 3. Subimos el avatar si el usuario adjuntó uno
             string? avatarUrl = null;
             if (input.Avatar is { Length: > 0 })
             {
@@ -78,23 +121,26 @@ public sealed class AuthController(SupabaseGateway db, IOptions<SupabaseOptions>
                 avatarUrl = db.PublicAvatarUrl(id);
             }
 
+            // 4. Guardamos el perfil en la tabla 'usuarios'
             var profile = new { id, nombre, apellido, fecha_nacimiento = input.FechaNacimiento, genero = input.Genero == "Prefiero no decirlo" ? null : input.Genero, rol = "jugador", avatar_url = avatarUrl };
             
-            if (string.IsNullOrWhiteSpace(accessToken))
-                await db.Insert<Usuario>("usuarios", profile, service: true);
-            else
-                await db.InsertAsUser<Usuario>("usuarios", profile, accessToken);
-
-            if (!string.IsNullOrWhiteSpace(accessToken))
+            try
             {
-                SetSession(accessToken);
+                await db.InsertAsUser<Usuario>("usuarios", profile, accessToken);
+            }
+            catch
+            {
+                // Si falla como usuario por políticas de RLS, intentamos con la llave de servicio si está disponible
+                await db.Insert<Usuario>("usuarios", profile, service: true);
             }
 
-            return Ok(new { requiresEmailConfirmation = false });
+            // 5. Seteamos la cookie de sesión y dejamos entrar a la app
+            SetSession(accessToken);
+            return Ok();
         }
         catch (Exception ex) 
         { 
-            return BadRequest(ex.Message); 
+            return BadRequest("Error en el proceso de registro: " + ex.Message); 
         }
     }
 
