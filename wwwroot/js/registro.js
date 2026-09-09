@@ -89,6 +89,12 @@ registro.addEventListener("submit", async event => {
         const response = await fetch("/Auth/Registro", { method: "POST", body });
         if (!response.ok) throw new Error(await response.text());
         const result = await response.json();
-        location.href = result.requiresEmailConfirmation ? "/Auth/Confirmado" : "/";
+        
+        // Redirección adaptada para mandar a la pantalla de aviso de verificación de correo
+        if (result.requiresEmailConfirmation) {
+            location.href = "/Auth/VerifyEmailNotice";
+        } else {
+            location.href = "/";
+        }
     } catch (error) { feedbackRegistro.textContent = error.message; }
 });
