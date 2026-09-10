@@ -3,10 +3,14 @@ using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddUserSecrets<Program>(optional: true);
+var dataProtectionKeysPath = builder.Configuration["DataProtection:KeyRingPath"]
+    ?? Environment.GetEnvironmentVariable("DATA_PROTECTION_KEYS_PATH")
+    ?? Path.Combine(builder.Environment.ContentRootPath, "work", "data-protection-keys");
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "work", "data-protection-keys")));
+    .SetApplicationName("ContraApp")
+    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
 builder.Services.AddHttpClient();
 builder.Services.Configure<SupabaseOptions>(builder.Configuration.GetSection("Supabase"));
 builder.Services.AddOptions<SupabaseOptions>()

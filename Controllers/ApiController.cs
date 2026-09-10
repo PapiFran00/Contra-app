@@ -13,7 +13,7 @@ public sealed class ApiController(SupabaseGateway db, CurrentUser current, IOpti
         try { return TimeZoneInfo.FindSystemTimeZoneById("America/Argentina/Buenos_Aires"); }
         catch { return TimeZoneInfo.FindSystemTimeZoneById("Argentina Standard Time"); }
     }
-    private async Task<Usuario> Me() => await db.One<Usuario>("usuarios", $"?id=eq.{current.Id}");
+    private async Task<Usuario> Me() => await db.One<Usuario>("Usuarios", $"?id=eq.{current.Id}");
     private async Task<bool> Role(string role) => (await Me()).rol == role;
     [HttpGet("realtime-config")] public IActionResult RealtimeConfig() => current.IsAuthenticated ? Ok(new { url = options.Value.Url, anonKey = options.Value.AnonKey, accessToken = current.Token }) : Unauthorized();
     [HttpGet("inicio")] public async Task<IActionResult> Inicio() { var partidos = await db.Get<Partido>("partidos", "?estado=eq.publicado&order=fecha_hora.asc&limit=10"); return Ok(partidos); }
@@ -36,7 +36,7 @@ public sealed class ApiController(SupabaseGateway db, CurrentUser current, IOpti
     [HttpPost("partidos/{id:guid}/postulaciones")] public async Task<IActionResult> Postular(Guid id) { if (!current.IsAuthenticated) return Unauthorized(); var p = await db.Insert<Postulacion>("postulaciones", new { partido_id = id, jugador_id = current.Id, estado = "pendiente" }); return Ok(p); }
     [HttpPatch("postulaciones/{id:guid}")] public async Task<IActionResult> Resolver(Guid id, [FromQuery] string estado) { if (!current.IsAuthenticated) return Unauthorized(); if (estado is not ("aceptada" or "rechazada")) return BadRequest(); await db.Patch("postulaciones", $"?id=eq.{id}", new { estado }); return NoContent(); }
     [HttpGet("perfil")] public async Task<IActionResult> Perfil() => !current.IsAuthenticated ? Unauthorized() : Ok(await Me());
-    [HttpPatch("perfil")] public async Task<IActionResult> Perfil(PerfilRequest input) { if (!current.IsAuthenticated) return Unauthorized(); await db.Patch("usuarios", $"?id=eq.{current.Id}", new { nombre = input.Nombre, apellido = input.Apellido, fecha_nacimiento = input.FechaNacimiento, genero = input.Genero }); return NoContent(); }
+    [HttpPatch("perfil")] public async Task<IActionResult> Perfil(PerfilRequest input) { if (!current.IsAuthenticated) return Unauthorized(); await db.Patch("Usuarios", $"?id=eq.{current.Id}", new { nombre = input.Nombre, apellido = input.Apellido, fecha_nacimiento = input.FechaNacimiento, genero = input.Genero }); return NoContent(); }
     [HttpPost("perfil/avatar"), RequestSizeLimit(6 * 1024 * 1024)] public async Task<IActionResult> ActualizarAvatar(IFormFile? avatar)
     {
         if (!current.IsAuthenticated) return Unauthorized();
@@ -44,11 +44,11 @@ public sealed class ApiController(SupabaseGateway db, CurrentUser current, IOpti
         await using var image = avatar.OpenReadStream();
         await db.UploadAvatar(current.Id, image, current.Token);
         var avatarUrl = db.PublicAvatarUrl(current.Id);
-        await db.Patch("usuarios", $"?id=eq.{current.Id}", new { avatar_url = avatarUrl });
+        await db.Patch("Usuarios", $"?id=eq.{current.Id}", new { avatar_url = avatarUrl });
         return Ok(new { avatarUrl });
     }
     [HttpPost("dueno/admins")] public async Task<IActionResult> AltaAdmin(AltaAdminRequest input)
-    { if (!current.IsAuthenticated) return Unauthorized(); if (!await Role("dueno")) return Forbid(); var id = await db.CreateAuthUser(input); var user = await db.Insert<Usuario>("usuarios", new { id, nombre = input.NombreComplejo, rol = "admin_complejo" }, true); var complejo = await db.Insert<Complejo>("complejos", new { administrador_id = id, nombre = input.NombreComplejo, ciudad = "Sunchales", activo = true }, true); return Ok(new { user, complejo }); }
+    { if (!current.IsAuthenticated) return Unauthorized(); if (!await Role("dueno")) return Forbid(); var id = await db.CreateAuthUser(input); var user = await db.Insert<Usuario>("Usuarios", new { id, nombre = input.NombreComplejo, rol = "admin_complejo" }, true); var complejo = await db.Insert<Complejo>("complejos", new { administrador_id = id, nombre = input.NombreComplejo, ciudad = "Sunchales", activo = true }, true); return Ok(new { user, complejo }); }
     [HttpGet("admin/complejo")] public async Task<IActionResult> MiComplejo() => !current.IsAuthenticated ? Unauthorized() : Ok(await db.One<Complejo>("complejos", $"?administrador_id=eq.{current.Id}"));
     [HttpPut("admin/complejo/configuracion")] public async Task<IActionResult> Configurar(ConfigurarComplejoRequest input)
     { if (!current.IsAuthenticated) return Unauthorized(); if (!await Role("admin_complejo")) return Forbid(); if (input.FutbolTechadas > input.Futbol || input.PadelTechadas > input.Padel || input.Apertura >= input.Cierre) return BadRequest("Configuración inválida."); var complejo = await db.One<Complejo>("complejos", $"?administrador_id=eq.{current.Id}"); await db.Rpc("regenerar_canchas", new { p_complejo_id = complejo.id, p_futbol = input.Futbol, p_futbol_techadas = input.FutbolTechadas, p_padel = input.Padel, p_padel_techadas = input.PadelTechadas }); await db.Patch("complejos", $"?id=eq.{complejo.id}", new { horario_apertura = input.Apertura, horario_cierre = input.Cierre }); return NoContent(); }

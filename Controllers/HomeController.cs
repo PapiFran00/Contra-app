@@ -5,7 +5,7 @@ public sealed class HomeController(CurrentUser current, SupabaseGateway db) : Co
 {
     public async Task<IActionResult> Index()
     {
-        if (current.IsAuthenticated) { try { ViewBag.Nombre = (await db.One<ContraApp.Models.Usuario>("usuarios", $"?id=eq.{current.Id}")).nombre; } catch { } }
+        if (current.IsAuthenticated) { try { ViewBag.Nombre = (await db.One<ContraApp.Models.Usuario>("Usuarios", $"?id=eq.{current.Id}")).nombre; } catch { } }
         return View();
     }
 }

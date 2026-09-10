@@ -55,8 +55,8 @@ public sealed class SupabaseGateway(IHttpClientFactory factory, IOptions<Supabas
         return c;
     }
 
-    public async Task<List<T>> Get<T>(string table, string query = "") { var r = await Client(false, true).GetAsync("rest/v1/" + table + query); await Ok(r); return await r.Content.ReadFromJsonAsync<List<T>>(Json) ?? []; }
-    public async Task<T> One<T>(string table, string query) => (await Get<T>(table, query)).First();
+    public async Task<List<T>> Get<T>(string table, string query = "", bool service = false) { var r = await Client(service, !service).GetAsync("rest/v1/" + table + query); await Ok(r); return await r.Content.ReadFromJsonAsync<List<T>>(Json) ?? []; }
+    public async Task<T> One<T>(string table, string query, bool service = false) => (await Get<T>(table, query, service)).First();
     public async Task<T> Insert<T>(string table, object body, bool service = false) { var c = Client(service, !service); c.DefaultRequestHeaders.Add("Prefer", "return=representation"); var r = await c.PostAsJsonAsync("rest/v1/" + table, body, Json); await Ok(r); return (await r.Content.ReadFromJsonAsync<List<T>>(Json))!.First(); }
     
     public async Task<T> InsertAsUser<T>(string table, object body, string accessToken)
@@ -69,9 +69,9 @@ public sealed class SupabaseGateway(IHttpClientFactory factory, IOptions<Supabas
         return (await r.Content.ReadFromJsonAsync<List<T>>(Json))!.First();
     }
 
-    public async Task Patch(string table, string query, object body) { var r = await Client(false, true).PatchAsJsonAsync("rest/v1/" + table + query, body, Json); await Ok(r); }
-    public async Task Delete(string table, string query) { var r = await Client(false, true).DeleteAsync("rest/v1/" + table + query); await Ok(r); }
-    public async Task<JsonElement> Rpc(string function, object body) { var r = await Client(false, true).PostAsJsonAsync("rest/v1/rpc/" + function, body, Json); await Ok(r); return JsonDocument.Parse(await r.Content.ReadAsStringAsync()).RootElement.Clone(); }
+    public async Task Patch(string table, string query, object body, bool service = false) { var r = await Client(service, !service).PatchAsJsonAsync("rest/v1/" + table + query, body, Json); await Ok(r); }
+    public async Task Delete(string table, string query, bool service = false) { var r = await Client(service, !service).DeleteAsync("rest/v1/" + table + query); await Ok(r); }
+    public async Task<JsonElement> Rpc(string function, object body, bool service = false) { var r = await Client(service, !service).PostAsJsonAsync("rest/v1/rpc/" + function, body, Json); await Ok(r); return JsonDocument.Parse(await r.Content.ReadAsStringAsync()).RootElement.Clone(); }
     
     public async Task<Guid> CreateAuthUser(AltaAdminRequest input) 
     { 
@@ -83,6 +83,7 @@ public sealed class SupabaseGateway(IHttpClientFactory factory, IOptions<Supabas
 
     public async Task<JsonElement> Login(LoginRequest input) 
     { 
+        // GoTrue acepta apikey, pero no Authorization: Bearer <anon key> en login/signup.
         var c = Client(service: false, includeAuth: false); 
         var r = await c.PostAsJsonAsync("auth/v1/token?grant_type=password", new { email = input.Correo, password = input.Contrasena }, Json); 
         await Ok(r); 
@@ -91,6 +92,7 @@ public sealed class SupabaseGateway(IHttpClientFactory factory, IOptions<Supabas
 
     public async Task<JsonElement> SignUp(RegistroRequest input, string emailRedirectTo)
     {
+        // GoTrue acepta apikey, pero no Authorization: Bearer <anon key> en login/signup.
         var c = Client(service: false, includeAuth: false);
         var r = await c.PostAsJsonAsync("auth/v1/signup", new { email = input.Correo, password = input.Contrasena, email_redirect_to = emailRedirectTo }, Json);
         await Ok(r); 

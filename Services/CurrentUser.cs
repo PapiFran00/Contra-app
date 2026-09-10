@@ -1,11 +1,25 @@
 using System.Text;
 using System.Text.Json;
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace ContraApp.Services;
-public sealed class CurrentUser(IHttpContextAccessor accessor)
+public sealed class CurrentUser(IHttpContextAccessor accessor, IDataProtectionProvider dataProtectionProvider)
 {
     private readonly HttpContext? _context = accessor.HttpContext;
-    public string? Token => _context?.Request.Cookies["contra_access_token"];
+    private readonly IDataProtector _accessTokenProtector = dataProtectionProvider.CreateProtector("ContraApp.Auth.AccessToken.v1");
+
+    public string? Token
+    {
+        get
+        {
+            var protectedToken = _context?.Request.Cookies["contra_access_token"];
+            if (string.IsNullOrWhiteSpace(protectedToken)) return null;
+
+            try { return _accessTokenProtector.Unprotect(protectedToken); }
+            catch (CryptographicException) { return null; }
+        }
+    }
     public bool IsAuthenticated => !string.IsNullOrWhiteSpace(Token);
     public Guid Id
     {
